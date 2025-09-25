@@ -1,24 +1,24 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js";
-import {User} from "../models/User.js";
+import {User} from "../models/user.model.js";
 import { uploadOnCloudinary} from "../utils/cloudinary.js";
 import {ApiResponse} from "../utils/ApiResponse.js";
 const registerUser = asyncHandler(async(req,res)=>{
    //register user logic
    // get user data from frontend
 
-   const {username,email,password,fullname} = req.body
+   const {username,email,password,fullName} = req.body
    console.log("email", email);
    
    // validate [non empty fields etc]
 
    if(
-      [fullname,email,password,username].some((field)=>field?.trim()==="")
+      [fullName,email,password,username].some((field)=>field?.trim()==="")
    ){
       throw new ApiError("All fields are required",400)
    }
    // check if the user already exists [email,username]
-   const existedUser = User.findOne(
+   const existedUser = await User.findOne(
       {$or:[{email},{username}]}
    );
    if(existedUser){
@@ -26,10 +26,10 @@ const registerUser = asyncHandler(async(req,res)=>{
    }
 
    // check for avatar and image 
-
+  
    const avatarLocapath = req.files?.avatar[0]?.path;
    const coverImageLocalpath = req.files?.coverImage[0]?.path;
-
+  
    if(!avatarLocapath ){
       throw new ApiError("Avatar is required",400)
    }

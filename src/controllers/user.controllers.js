@@ -136,7 +136,7 @@ const loginUser = asyncHandler(async(req,res)=>{
    )
 })
 
-const logOutUser = asyncHandler(async(req,res)=>{
+const logoutUser = asyncHandler(async(req,res)=>{
    User.findByIdAndUpdate(
       req.user._id,
       {
@@ -163,5 +163,5 @@ const logOutUser = asyncHandler(async(req,res)=>{
 
 
 export {registerUser
-   ,loginUser
+   ,loginUser,logoutUser
 };

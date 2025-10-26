@@ -52,26 +52,26 @@ userSchema.methods.isPasswordCorrect = async function(password) {
     return await bcrypt.compare(password,this.password)
 }
 userSchema.methods.generateAccessToken = function(){
-    jwt.sign({
+    return jwt.sign({
         _id:this._id,
         username: this.username,
         email: this.email
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-        expiration: process.env.ACCESS_TOKEN_EXPIRY
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
     }
 )
 }
 userSchema.methods.generateRefreshToken = function(){
-    jwt.sign({
+    return jwt.sign({
         _id:this._id,
         username: this.username,
         email: this.email
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
-        expiration: process.env.REFRESH_TOKEN_EXPIRY
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY
     }
 )
 }

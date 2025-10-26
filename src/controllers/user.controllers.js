@@ -103,7 +103,7 @@ const loginUser = asyncHandler(async(req,res)=>{
    
     // validate data
    const user = await User.findOne({ //here capital User is model i.e of mongoose
-      $or:[(email),{username}]//this small user is the on method made by us and here instance of it is taken care by mongoose
+      $or:[{email},{username}]//this small user is the on method made by us and here instance of it is taken care by mongoose
    });
    // check if user exists
    if(!user){

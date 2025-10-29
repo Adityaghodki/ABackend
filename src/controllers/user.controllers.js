@@ -306,7 +306,75 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
       )
    });
 
+   const getUserChannelProfile = asyncHandler(async(req,res)=>{
+   
+      const {username} = req.params; // we want user url , thus we user req.params
+      if(!username?.trim()){
+         throw new ApiError("username is missing",400);
+      }
+      const channel = await User.aggregate([
+
+         {
+            $match: {username: username?.toLowerCase()}
+         },
+         {
+            $lookup: {
+               from: "subscriptions", // collection name in db
+               localField : "_id",
+               foreignField: "channel",
+               as: "subscribers"
+            }
+         },
+         {
+            $lookup: { 
+               form: "subscriptions",
+               localField: "_id",
+               foreignField: "subscriber",
+               as: "subscribedTo"
+             }
+         },{
+            $addFields: {
+               subscribersCount:{
+                  $size : "$subscribers"
+               },
+               channelsSubscribedToCount: {
+                  $size : "$subscribedTo"
+               },
+               isSubscribed: {
+                  $cond: {
+                     if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                     then: true,
+                     else: false
+                  }
+               }
+            }
+         },
+         {
+            $project: {
+               fullName: 1,
+               username: 1,
+               subscribersCount: 1,
+               channelsSubscribedToCount: 1,
+               isSubscribed: 1,
+               avatar: 1,
+               coverImage: 1,
+               email: 1 
+            }
+         }
+
+      ]);
+
+      if(!channel?.length){
+         throw new ApiError("Channel does not existed",404);
+      }
+
+      return res.status(200).json(
+         new ApiResponse(200,channel[0],"User channel profile fetched successfully")
+      )
+   
+   });
+
 export {registerUser
    ,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword
-   ,getcurrentUser,updateAccountDetails,updateAvatar,updateCoverImage
+   ,getcurrentUser,updateAccountDetails,updateAvatar,updateCoverImage,getUserChannelProfile
 };

@@ -185,15 +185,3 @@ This project is licensed under the MIT License.
 
 Aditya Ghodki
 GitHub: https://github.com/Adityaghodki
-
-If you want, I can:
-
-Shorten this for recruiter-focused repos
-
-Add API endpoint documentation
-
-Generate a Swagger/OpenAPI spec
-
-Rewrite this as a portfolio project README
-
-Just tell me what you want next 🚀

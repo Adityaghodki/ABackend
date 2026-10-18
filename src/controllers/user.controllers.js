@@ -7,7 +7,7 @@ import { config } from "../config/env.js";
 import * as userService from "../services/user.service.js";
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password, fullName } = req.body;
+  const { username, email, password, fullName } = req.validatedBody;
 
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   let coverImageLocalPath;
@@ -34,7 +34,7 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, password, username } = req.body;
+  const { email, password, username } = req.validatedBody;
 
   const { user, accessToken, refreshToken } = await userService.loginUser({
     email,
@@ -121,7 +121,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, email } = req.body;
+  const { fullName, email } = req.validatedBody;
 
   if (!fullName && !email) {
     throw new ApiError(400, "Atleast one field is required to update");

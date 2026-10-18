@@ -4,6 +4,8 @@ import {upload} from "../middlewares/multer.middleware.js";
 import { loginUser, logoutUser, refreshAccessToken } from "../controllers/user.controllers.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import {changeCurrentPassword, getCurrentUser, updateAccountDetails, updateAvatar,updateCoverImage,getUserChannelProfile,getWatchHistory} from "../controllers/user.controllers.js";
+import { validate } from "../middlewares/validate.js";
+import { registerSchema, loginSchema, updateUserSchema } from "../validators/user.validators.js";
 const router = Router();
 router.route("/register").post(
     upload.fields([
@@ -15,10 +17,11 @@ router.route("/register").post(
         }
     ]
     ),
+    validate(registerSchema),
     registerUser
 );
 
-router.route("/login").post(loginUser);
+router.route("/login").post(validate(loginSchema), loginUser);
 // secure routes 
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/refresh-Token").post(refreshAccessToken);
@@ -27,7 +30,7 @@ router.route("/refresh-Token").post(refreshAccessToken);
 router.route("/change-password").post(verifyJWT,changeCurrentPassword);
 router.route("/current-user").get(verifyJWT,getCurrentUser);
 
-router.route("/update-account").put(verifyJWT,updateAccountDetails);
+router.route("/update-account").put(verifyJWT,validate(updateUserSchema),updateAccountDetails);
 router.route("/update-avatar").put(verifyJWT,upload.single('avatar'),updateAvatar);
 router.route("/update-cover-image").put(verifyJWT,upload.single('coverImage'),updateCoverImage);
 

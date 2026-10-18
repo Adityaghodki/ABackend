@@ -26,6 +26,35 @@ if (missing.length > 0) {
 
 const isProduction = process.env.NODE_ENV === "production";
 
+const parseIntegerInRange = (raw, fallback, name, min, max) => {
+  if (raw === undefined || raw.trim() === "") {
+    return fallback;
+  }
+
+  const value = Number(raw);
+
+  if (!Number.isSafeInteger(value) || value < min || value > max) {
+    throw new Error(
+      `Invalid environment variable ${name}: expected an integer between ${min} and ${max}, received "${raw}"`
+    );
+  }
+
+  return value;
+};
+
+const parseBoolean = (raw, fallback, name) => {
+  if (raw === undefined || raw.trim() === "") {
+    return fallback;
+  }
+
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+
+  throw new Error(
+    `Invalid environment variable ${name}: expected "true" or "false", received "${raw}"`
+  );
+};
+
 export const config = {
   port: process.env.PORT || 8000,
   mongodbUrl: process.env.MONGODB_URL,
@@ -39,6 +68,12 @@ export const config = {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
+  },
+  redis: {
+    host: process.env.REDIS_HOST || "127.0.0.1",
+    port: parseIntegerInRange(process.env.REDIS_PORT, 6379, "REDIS_PORT", 1, 65535),
+    password: process.env.REDIS_PASSWORD || undefined,
+    tls: parseBoolean(process.env.REDIS_TLS, false, "REDIS_TLS"),
   },
   cookieOptions: {
     httpOnly: true,

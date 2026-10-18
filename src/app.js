@@ -20,12 +20,21 @@ app.use(cookieParser());
 
 //routes
 import userRouter from "./routes/user.routes.js";
+import videoRouter from "./routes/video.routes.js";
 
 //routes declaration
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/videos", videoRouter);
 
 // centralized error handler
 app.use((err, req, res, next) => {
+  if (err?.code === 11000) {
+    const field = Object.keys(err.keyPattern || {}).join(", ") || "field";
+    return res
+      .status(409)
+      .json(new ApiResponse(409, null, `Duplicate value for ${field}`));
+  }
+
   const statusCode = err.statusCode || 500;
   return res
     .status(statusCode)

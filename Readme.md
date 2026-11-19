@@ -223,3 +223,127 @@ This project is licensed under the MIT License.
 Aditya Ghodki
 GitHub: https://github.com/Adityaghodki
 
+
+
+---
+
+## 📦 Day 4 — Azure Blob Storage (Direct Client Upload)
+
+Day 4 adds a fully production-grade video upload architecture using Azure Blob Storage (with Azurite for local development). Videos are **never** passed through Express — the client uploads directly to Blob Storage using a short-lived SAS URL.
+
+### Key Features
+- `StorageService` class with runtime provider switching (`STORAGE_PROVIDER=azurite|azure`)
+- **User Delegation SAS** for real Azure (HTTPS-only, scoped, 15-min TTL)
+- **Shared Key SAS** for local Azurite (HTTP+HTTPS, same code path)
+- Video model extended with: `blobKey`, `status`, `hlsKey`, `thumbnailKey`, `failureReason`, `fileSize`, `mimeType`
+- Status state machine: `uploading → processing → processed | failed`
+- Completion endpoint validates blob existence and actual size in storage
+
+### Upload Flow
+
+```
+Client → POST /api/v1/videos/upload/request → API validates + returns SAS URL
+Client → PUT <SAS URL> (video bytes go directly to blob storage, not through API)
+Client → POST /api/v1/videos/upload/complete → API verifies blob + enqueues processing
+```
+
+### New Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/v1/videos/upload/request` | Get SAS upload URL for direct blob upload |
+| `POST` | `/api/v1/videos/upload/complete` | Verify upload + enqueue processing |
+| `GET` | `/api/v1/videos/:videoId` | Get video by ID with status |
+
+### New Environment Variables
+
+```env
+STORAGE_PROVIDER=azurite          # or: azure
+AZURE_STORAGE_ACCOUNT_NAME=...    # your Azure storage account name
+AZURE_STORAGE_CONTAINER_NAME=videos
+AZURITE_PORT=10000                # local dev port
+SAS_EXPIRY_MINUTES=15
+MAX_VIDEO_UPLOAD_SIZE_BYTES=524288000   # 500 MB default
+```
+
+### Running Azurite Locally (without Docker)
+
+```bash
+# Install azurite (already in devDependencies)
+# Run: azurite-blob --skipApiVersionCheck --loose --blobPort 10000
+npx azurite-blob --skipApiVersionCheck --loose --blobPort 10000
+```
+
+---
+
+## ⚙️ Day 5 — BullMQ Video Processing Worker
+
+Day 5 adds an independent video processing worker that picks up jobs from a Redis-backed BullMQ queue and runs the full FFmpeg pipeline.
+
+### Processing Workflow
+
+```
+Worker receives job → Download blob (streaming) → ffprobe validate
+  → Generate thumbnail (JPG, 640px) → Generate HLS (master.m3u8 + segments)
+  → Upload derivatives to Blob Storage → Verify → Update MongoDB (processed)
+  → Cleanup temp files
+```
+
+### Key Features
+- Reuses existing ioredis config (no duplicate Redis setup)
+- Deterministic `jobId = video-<videoId>` prevents duplicate processing
+- 3 retries with exponential backoff: 5s → 10s → 20s
+- Streaming download/upload — videos never fully loaded in memory
+- Isolated temp directory per job (`os.tmpdir()/backend_video_worker/job-<id>/`)
+- Temp files always cleaned in `finally` block (success and failure)
+- FFmpeg/ffprobe resolved from npm packages (works on Windows + Docker)
+
+### Starting the Worker
+
+```bash
+# Start worker standalone (requires Redis running)
+node src/workers/video.worker.js
+
+# Or via npm script
+npm run worker
+
+# With Docker Compose
+docker compose up worker
+```
+
+### Docker Commands
+
+```bash
+docker compose up -d           # Start API + Worker + Azurite
+docker compose logs -f worker  # Watch worker logs
+docker compose down            # Stop all services
+```
+
+### Test Commands
+
+```bash
+# Run Day 4 storage tests (requires network for MongoDB Atlas)
+node --test tests/day4_storage.test.js
+
+# Run Day 5 worker tests (requires network for MongoDB Atlas)
+node --test tests/day5_processing.test.js
+
+# Run both
+node --test tests/day4_storage.test.js tests/day5_processing.test.js
+```
+
+### Test Results
+
+| Suite | Tests | Pass | Fail |
+|---|---|---|---|
+| Day 4 — Storage & Direct Upload | 8 | ✅ 8 | 0 |
+| Day 5 — Video Processing Worker | 8 | ✅ 8 | 0 |
+
+> **Note:** Tests run against Azurite (local) and MongoDB Atlas. Redis-dependent BullMQ queue integration requires a running Redis instance (`docker run -d -p 6379:6379 redis:7-alpine`).
+
+---
+
+## 📄 Documentation
+
+- [`DAY4_DAY5_IMPLEMENTATION_REPORT.md`](./DAY4_DAY5_IMPLEMENTATION_REPORT.md) — Full technical report with architecture diagrams, API docs, security considerations
+- [`IMPLEMENTATION_CHECKPOINT.md`](./IMPLEMENTATION_CHECKPOINT.md) — Implementation status and key decisions

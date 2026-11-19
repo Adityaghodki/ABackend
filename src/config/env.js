@@ -75,6 +75,35 @@ export const config = {
     password: process.env.REDIS_PASSWORD || undefined,
     tls: parseBoolean(process.env.REDIS_TLS, false, "REDIS_TLS"),
   },
+  storage: {
+    provider: (process.env.STORAGE_PROVIDER || "azurite").toLowerCase(),
+    accountName: process.env.AZURE_STORAGE_ACCOUNT_NAME || "devstoreaccount1",
+    accountKey:
+      process.env.AZURE_STORAGE_ACCOUNT_KEY ||
+      "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
+    containerName: process.env.AZURE_STORAGE_CONTAINER_NAME || "videos",
+    azuriteHost: process.env.AZURITE_HOST || "127.0.0.1",
+    azuritePort: parseIntegerInRange(process.env.AZURITE_PORT, 10000, "AZURITE_PORT", 1, 65535),
+    connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING || undefined,
+    maxUploadSizeBytes: parseIntegerInRange(
+      process.env.MAX_VIDEO_UPLOAD_SIZE_BYTES,
+      500 * 1024 * 1024,
+      "MAX_VIDEO_UPLOAD_SIZE_BYTES",
+      1024,
+      5 * 1024 * 1024 * 1024
+    ),
+    sasExpiryMinutes: parseIntegerInRange(
+      process.env.SAS_EXPIRY_MINUTES,
+      15,
+      "SAS_EXPIRY_MINUTES",
+      1,
+      1440
+    ),
+  },
+  queue: {
+    videoQueueName: process.env.VIDEO_QUEUE_NAME || "video-processing",
+    concurrency: parseIntegerInRange(process.env.WORKER_CONCURRENCY, 2, "WORKER_CONCURRENCY", 1, 10),
+  },
   cookieOptions: {
     httpOnly: true,
     secure: isProduction,

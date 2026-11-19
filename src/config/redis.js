@@ -28,4 +28,12 @@ redis.on("end", () => {
   console.warn("Redis connection closed");
 });
 
+export const redisConnectionOptions = {
+  host: config.redis.host,
+  port: config.redis.port,
+  password: config.redis.password,
+  tls: config.redis.tls ? {} : undefined,
+  maxRetriesPerRequest: null,
+};
+
 export default redis;
